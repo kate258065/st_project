@@ -209,3 +209,26 @@ print(f"열 개수: {len(df.columns)}")
 print(f"남은 열: {list(df.columns)}")
 print(f"저장 파일: {output_file.resolve()}")
 
+import pandas as pd
+
+# 데이터 불러오기
+df = pd.read_csv("data.csv")
+
+# 성별 컬럼을 제외한 데이터 처리
+gender_independent_data = df.drop(columns=["성별"], errors="ignore")
+
+# 결측치 처리
+gender_independent_data = gender_independent_data.fillna(0)
+
+# 데이터 분석
+result = gender_independent_data.describe()
+
+# 결과 저장
+gender_independent_data.to_csv(
+    "processed_data.csv",
+    index=False,
+    encoding="utf-8-sig"
+)
+
+print("성별과 관계없이 데이터 처리가 완료되었습니다.")
+print(result)
