@@ -41,6 +41,35 @@ try:
 except Exception as e:
     st.error(f"데이터를 불러올 수 없습니다: {e}")
     st.stop()
+    
+# =================================
+# 데이터 개요
+# =================================
+
+st.subheader("📋 데이터 개요")
+
+for name, data in [
+    ("인구 데이터", population),
+    ("건강검진 데이터", health),
+    ("의료기관 데이터", hospital)
+]:
+    st.markdown(f"### {name}")
+
+    overview = pd.DataFrame({
+        "열 이름": data.columns,
+        "자료형": data.dtypes.astype(str).values,
+        "빈 값 개수": data.isnull().sum().values
+    })
+
+    st.write(f"행 개수: {data.shape[0]}개")
+    st.write(f"열 개수: {data.shape[1]}개")
+
+    st.dataframe(
+        overview,
+        use_container_width=True,
+        hide_index=True
+    )
+
 
 # =================================
 # 3. 지역명 통일
