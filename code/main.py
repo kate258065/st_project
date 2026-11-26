@@ -166,3 +166,45 @@ if uploaded_file is not None:
 
 else:
     st.info("👆 먼저 분석할 CSV 파일을 업로드하세요.")
+import pandas as pd
+from pathlib import Path
+
+# 원본 CSV 파일
+input_file = Path(
+    "보건복지부_병원 및 의원 수_의료기관 종류별_시도별_20241231 (1).csv"
+)
+
+# 수정된 CSV 파일
+output_file = Path(
+    "병의원_종합병원_요양병원_일반병원_의원만.csv"
+)
+
+# CSV 파일 읽기
+df = pd.read_csv(input_file, encoding="cp949")
+
+# 남길 열
+keep_columns = [
+    "연도",
+    "시도",
+    "병의원_종합병원",
+    "병의원_요양병원",
+    "병의원_일반병원",
+    "병의원_의원"
+]
+
+# 필요한 열만 선택
+df = df[keep_columns]
+
+# CSV 파일 저장
+df.to_csv(
+    output_file,
+    index=False,
+    encoding="utf-8-sig"
+)
+
+# 결과 확인
+print("열 삭제 완료!")
+print(f"행 개수: {len(df)}")
+print(f"열 개수: {len(df.columns)}")
+print(f"남은 열: {list(df.columns)}")
+print(f"저장 파일: {output_file.resolve()}")
