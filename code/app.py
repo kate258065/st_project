@@ -58,12 +58,12 @@ for name, data in [
     overview = pd.DataFrame({
         "열 이름": data.columns,
         "자료형": data.dtypes.map({
-    "object": "문자형",
-    "str": "문자형",
-    "int64": "정수형",
-    "float64": "실수형",
-    "bool": "논리형"
-}).fillna(data.dtypes.astype(str)).values,
+        "object": "문자형",
+        "str": "문자형",
+        "int64": "정수형",
+        "float64": "실수형",
+        "bool": "논리형"
+        }).fillna(data.dtypes.astype(str)).values,
 
         "빈 값 개수": data.isnull().sum().values
     })
