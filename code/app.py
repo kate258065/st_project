@@ -57,7 +57,7 @@ for name, data in [
 
     overview = pd.DataFrame({
         "열 이름": data.columns,
-        "자료형": data.dtypes.astype(str).values,
+        "자료형": data.dtypes.astype("문자형").values,
         "빈 값 개수": data.isnull().sum().values
     })
 
