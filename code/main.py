@@ -208,3 +208,46 @@ print(f"행 개수: {len(df)}")
 print(f"열 개수: {len(df.columns)}")
 print(f"남은 열: {list(df.columns)}")
 print(f"저장 파일: {output_file.resolve()}")
+
+from typing import Any
+
+
+def sanitize_records(
+    records: list[dict[str, Any]],
+    sensitive_keys: set[str] | None = None,
+) -> list[dict[str, Any]]:
+    """레코드에서 성별 등 민감 속성을 제거해 성별과 무관한 형태로 정제합니다."""
+    drop_keys = sensitive_keys or {"gender", "sex", "성별"}
+    return [
+        {k: v for k, v in record.items() if k.lower() not in {d.lower() for d in drop_keys}}
+        for record in records
+    ]
+
+
+def summarize_scores(records: list[dict[str, Any]]) -> dict[str, float]:
+    """성별 구분 없이 전체 인원 기준 평균 점수를 계산합니다."""
+    cleaned = sanitize_records(records)
+    scores = [float(item["score"]) for item in cleaned if "score" in item]
+
+    if not scores:
+        return {"count": 0.0, "average": 0.0}
+
+    return {
+        "count": float(len(scores)),
+        "average": round(sum(scores) / len(scores), 2),
+    }
+
+
+if __name__ == "__main__":
+    raw_data = [
+        {"id": 1, "name": "지수", "gender": "F", "score": 88},
+        {"id": 2, "name": "민준", "gender": "M", "score": 94},
+        {"id": 3, "name": "서연", "gender": "F", "score": 79},
+        {"id": 4, "name": "도윤", "gender": "M", "score": 91},
+    ]
+
+    cleaned_data = sanitize_records(raw_data)
+    summary = summarize_scores(raw_data)
+
+    print("정제된 데이터:", cleaned_data)
+    print("전체 요약:", summary)
