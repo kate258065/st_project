@@ -1,5 +1,7 @@
+
 streamlit
 pandas
 plotly
 scipy
 matplotlib
+koreanize-matplotlib
