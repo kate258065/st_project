@@ -1,11 +1,33 @@
+
 import os
+import glob
 import pandas as pd
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
-import koreanize_matplotlib
+import matplotlib.font_manager as fm
 from scipy.stats import linregress
+
+# =================================
+# 한글 폰트 설정
+# =================================
+
+font_paths = glob.glob(
+    "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+)
+
+if font_paths:
+    korean_font = fm.FontProperties(fname=font_paths[0])
+    plt.rcParams["font.family"] = korean_font.get_name()
+else:
+    st.warning(
+        "한글 폰트를 찾지 못했습니다. "
+        "packages.txt에 fonts-nanum이 있는지 확인해 주세요."
+    )
+
+plt.rcParams["axes.unicode_minus"] = False
+
 
 
 # =================================
