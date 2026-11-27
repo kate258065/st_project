@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 from scipy.stats import linregress
 
 # =================================
@@ -17,6 +18,7 @@ st.set_page_config(
 )
 
 st.title("🏥 지역별 의료 인프라와 건강검진 수검률")
+
 st.write(
     "우리나라 지역별 의료기관 수와 건강검진 수검률의 관계를 알아봅니다."
 )
@@ -26,12 +28,17 @@ st.write(
 # =================================
 
 def read_csv_file(path):
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"파일을 찾을 수 없습니다: {path}")
+
     for encoding in ["utf-8-sig", "cp949", "euc-kr", "utf-8"]:
         try:
             return pd.read_csv(path, encoding=encoding)
         except UnicodeDecodeError:
             continue
+
     raise ValueError(f"{path} 파일의 인코딩을 확인해 주세요.")
+
 
 try:
     population = read_csv_file("data/population.csv")
@@ -41,42 +48,6 @@ try:
 except Exception as e:
     st.error(f"데이터를 불러올 수 없습니다: {e}")
     st.stop()
-    
-# =================================
-# 데이터 개요
-# =================================
-
-st.subheader("📋 데이터 개요")
-
-for name, data in [
-    ("인구 데이터", population),
-    ("건강검진 데이터", health),
-    ("의료기관 데이터", hospital)
-]:
-    st.markdown(f"### {name}")
-
-    overview = pd.DataFrame({
-        "열 이름": data.columns,
-        "자료형": data.dtypes.map({
-        "object": "문자형",
-        "str": "문자형",
-        "int64": "정수형",
-        "float64": "실수형",
-        "bool": "논리형"
-        }).fillna(data.dtypes.astype(str)).values,
-
-        "빈 값 개수": data.isnull().sum().values
-    })
-
-    st.write(f"행 개수: {data.shape[0]}개")
-    st.write(f"열 개수: {data.shape[1]}개")
-
-    st.dataframe(
-        overview,
-        use_container_width=True,
-        hide_index=True
-    )
-
 
 # =================================
 # 3. 지역명 통일
@@ -102,15 +73,27 @@ REGION_MAP = {
     "제주": "제주특별자치도"
 }
 
+
 def normalize_region(value):
     value = str(value).strip()
     value = value.split()[0]
     value = value.split("(")[0].strip()
+
     return REGION_MAP.get(value, value)
+
 
 # =================================
 # 4. 인구 데이터 처리
 # =================================
+
+required_population = [
+    "행정구역(시군구)별",
+    "연령별"
+]
+
+if not all(col in population.columns for col in required_population):
+    st.error("인구 자료의 열 이름을 확인해 주세요.")
+    st.stop()
 
 population_columns = [
     col for col in population.columns
@@ -134,30 +117,50 @@ population = population[
 population.columns = ["지역", "인구수"]
 
 population["지역"] = population["지역"].apply(normalize_region)
+
 population["인구수"] = pd.to_numeric(
-    population["인구수"], errors="coerce"
+    population["인구수"],
+    errors="coerce"
 )
 
-population = population[population["지역"] != "전국"]
+population = population[
+    population["지역"] != "전국"
+]
 
 # =================================
 # 5. 건강검진 데이터 처리
 # =================================
 
+required_health = [
+    "시도",
+    "대상인원",
+    "수검인원"
+]
+
+if not all(col in health.columns for col in required_health):
+    st.error("건강검진 파일의 열 이름을 확인해 주세요.")
+    st.stop()
+
 health = health[
     ["시도", "대상인원", "수검인원"]
 ].copy()
 
-health.columns = ["지역", "대상인원", "수검인원"]
+health.columns = [
+    "지역",
+    "대상인원",
+    "수검인원"
+]
 
 health["지역"] = health["지역"].apply(normalize_region)
 
 health["대상인원"] = pd.to_numeric(
-    health["대상인원"], errors="coerce"
+    health["대상인원"],
+    errors="coerce"
 )
 
 health["수검인원"] = pd.to_numeric(
-    health["수검인원"], errors="coerce"
+    health["수검인원"],
+    errors="coerce"
 )
 
 health["수검률(%)"] = (
@@ -168,7 +171,24 @@ health["수검률(%)"] = (
 # 6. 의료기관 데이터 처리
 # =================================
 
+required_hospital = [
+    "연도",
+    "시도",
+    "병의원_종합병원",
+    "병의원_요양병원",
+    "병의원_일반병원",
+    "병의원_의원"
+]
+
+if not all(col in hospital.columns for col in required_hospital):
+    st.error("의료기관 파일의 열 이름을 확인해 주세요.")
+    st.stop()
+
 years = sorted(hospital["연도"].dropna().unique())
+
+if not years:
+    st.error("의료기관 자료에서 연도를 찾을 수 없습니다.")
+    st.stop()
 
 selected_year = st.sidebar.selectbox(
     "의료기관 자료 연도 선택",
@@ -176,7 +196,9 @@ selected_year = st.sidebar.selectbox(
     index=len(years) - 1
 )
 
-hospital = hospital[hospital["연도"] == selected_year].copy()
+hospital = hospital[
+    hospital["연도"] == selected_year
+].copy()
 
 hospital["지역"] = hospital["시도"].apply(normalize_region)
 
@@ -189,12 +211,17 @@ facility_columns = [
 
 for col in facility_columns:
     hospital[col] = pd.to_numeric(
-        hospital[col], errors="coerce"
+        hospital[col],
+        errors="coerce"
     )
 
-hospital["의료기관 수"] = hospital[facility_columns].sum(axis=1)
+hospital["의료기관 수"] = hospital[
+    facility_columns
+].sum(axis=1)
 
-hospital = hospital[["지역", "의료기관 수"]]
+hospital = hospital[
+    ["지역", "의료기관 수"]
+]
 
 # =================================
 # 7. 데이터 결합
@@ -215,7 +242,12 @@ df = pd.merge(
 )
 
 df = df.dropna(
-    subset=["대상인원", "수검인원", "의료기관 수", "인구수"]
+    subset=[
+        "대상인원",
+        "수검인원",
+        "의료기관 수",
+        "인구수"
+    ]
 )
 
 df = df[
@@ -238,7 +270,7 @@ if len(df) < 3:
 st.subheader("📊 1. 지역별 분석 데이터")
 
 st.caption(
-    f"의료기관 기준 연도: {selected_year}년 / "
+    f"의료기관 기준 연도: {selected_year}년 | "
     f"인구 기준: {population_year}"
 )
 
@@ -270,7 +302,7 @@ st.dataframe(
 )
 
 # =================================
-# 9. 의료 인프라와 수검률 관계 그래프
+# 9. 의료 인프라와 수검률 관계
 # =================================
 
 st.subheader("📈 2. 의료 인프라와 건강검진 수검률의 관계")
@@ -287,13 +319,17 @@ x_choice = st.radio(
 x = df[x_choice]
 y = df["수검률(%)"]
 
+if x.nunique() < 2:
+    st.error("의료 인프라 지표의 값이 모두 같아 회귀선을 계산할 수 없습니다.")
+    st.stop()
+
 result = linregress(x, y)
 
 slope = result.slope
 intercept = result.intercept
 r_value = result.rvalue
 
-# 산점도
+# 산점도 생성
 fig = px.scatter(
     df,
     x=x_choice,
@@ -311,8 +347,9 @@ fig = px.scatter(
     title="지역별 의료 인프라와 건강검진 수검률"
 )
 
-# 회귀선
+# 회귀선 생성
 line_x = [x.min(), x.max()]
+
 line_y = [
     slope * value + intercept
     for value in line_x
@@ -332,10 +369,55 @@ fig.update_traces(
     selector=dict(mode="markers+text")
 )
 
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
 
 # =================================
-# 10. 그래프 간단한 해석
+# 10. 육각형 빈도 그래프
+# =================================
+
+st.subheader("🔷 3. 데이터 분포를 보여주는 육각형 빈도 그래프")
+
+st.write(
+    "육각형 구역 안에 데이터가 얼마나 모여 있는지 색으로 나타냅니다. "
+    "색이 진할수록 해당 구역에 포함된 데이터가 많다는 의미입니다."
+)
+
+fig_hex, ax = plt.subplots(figsize=(10, 6))
+
+hex_plot = ax.hexbin(
+    x,
+    y,
+    gridsize=6,
+    mincnt=1,
+    cmap="YlOrRd"
+)
+
+colorbar = fig_hex.colorbar(
+    hex_plot,
+    ax=ax
+)
+
+colorbar.set_label("데이터 개수")
+
+ax.set_xlabel(x_choice)
+ax.set_ylabel("건강검진 수검률(%)")
+ax.set_title("의료 인프라와 건강검진 수검률의 육각형 빈도 그래프")
+
+ax.grid(alpha=0.2)
+
+st.pyplot(fig_hex, use_container_width=True)
+
+plt.close(fig_hex)
+
+st.caption(
+    "※ 각 육각형의 색은 해당 구역에 포함된 지역 데이터의 개수를 나타냅니다."
+)
+
+# =================================
+# 11. 그래프 해석
 # =================================
 
 st.markdown("### 그래프 해석")
@@ -348,15 +430,42 @@ if r_value > 0:
         "의료 인프라 지표가 높은 지역일수록 "
         "건강검진 수검률도 높은 경향이 있습니다."
     )
+
 elif r_value < 0:
     st.write(
         "의료 인프라 지표가 높은 지역일수록 "
         "건강검진 수검률이 낮은 경향이 있습니다."
     )
+
 else:
-    st.write("두 변수 사이에 뚜렷한 선형 관계가 없습니다.")
+    st.write(
+        "두 변수 사이에 뚜렷한 선형 관계가 없습니다."
+    )
 
 st.caption(
-    "※ 지역별 자료의 상관관계를 보여주는 그래프이며, "
+    "※ 이 그래프와 분석은 지역별 상관관계를 보여주며, "
     "인과관계를 증명하는 것은 아닙니다."
+)
+
+# =================================
+# 12. 자료 이용 시 유의사항
+# =================================
+
+st.divider()
+
+st.subheader("⚠️ 자료 이용 시 유의사항")
+
+st.markdown("""
+- 건강검진 수검률은 수검인원을 대상인원으로 나누어 계산했습니다.
+- 의료기관 수는 종합병원, 요양병원, 일반병원, 의원의 합계입니다.
+- 인구 규모 차이를 고려하기 위해 인구 1만 명당 의료기관 수도 함께 표시합니다.
+- 건강검진 자료에는 연도가 표시되어 있지 않아 다른 자료와 기준 시점이 다를 수 있습니다.
+- 건강검진 자료에 서울과 경기도가 없어 해당 지역은 분석에서 제외될 수 있습니다.
+- 분석 대상 지역 수가 적으므로 육각형 빈도 그래프는 데이터의 분포를 보조적으로 확인하는 용도로 해석해야 합니다.
+""")
+
+st.divider()
+
+st.caption(
+    "지역별 의료 인프라와 건강검진 수검률 분석 프로젝트"
 )
