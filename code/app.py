@@ -425,8 +425,9 @@ st.plotly_chart(
     use_container_width=True
 )
 
+
 # =================================
-# 10. 육각형 빈도 그래프
+# 육각형 빈도 그래프
 # =================================
 
 st.subheader("🔷 3. 데이터 분포를 보여주는 육각형 빈도 그래프")
@@ -446,57 +447,25 @@ hex_plot = ax.hexbin(
     cmap="YlOrRd"
 )
 
-colorbar = fig_hex.colorbar(
-    hex_plot,
-    ax=ax
-)
+colorbar = fig_hex.colorbar(hex_plot, ax=ax)
 
 colorbar.set_label("데이터 개수")
 
 ax.set_xlabel(x_choice)
 ax.set_ylabel("건강검진 수검률(%)")
-ax.set_title("의료 인프라와 건강검진 수검률의 육각형 빈도 그래프")
+
+ax.set_title(
+    "의료 인프라와 건강검진 수검률의 육각형 빈도 그래프"
+)
 
 ax.grid(alpha=0.2)
+
+fig_hex.tight_layout()
 
 st.pyplot(fig_hex, use_container_width=True)
 
 plt.close(fig_hex)
 
-st.caption(
-    "※ 각 육각형의 색은 해당 구역에 포함된 지역 데이터의 개수를 나타냅니다."
-)
-
-# =================================
-# 11. 그래프 해석
-# =================================
-
-st.markdown("### 그래프 해석")
-
-st.write(f"- 분석 지역 수: {len(df)}개")
-st.write(f"- 상관계수: {r_value:.3f}")
-
-if r_value > 0:
-    st.write(
-        "의료 인프라 지표가 높은 지역일수록 "
-        "건강검진 수검률도 높은 경향이 있습니다."
-    )
-
-elif r_value < 0:
-    st.write(
-        "의료 인프라 지표가 높은 지역일수록 "
-        "건강검진 수검률이 낮은 경향이 있습니다."
-    )
-
-else:
-    st.write(
-        "두 변수 사이에 뚜렷한 선형 관계가 없습니다."
-    )
-
-st.caption(
-    "※ 이 그래프와 분석은 지역별 상관관계를 보여주며, "
-    "인과관계를 증명하는 것은 아닙니다."
-)
 
 # =================================
 # 12. 자료 이용 시 유의사항
