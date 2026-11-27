@@ -73,4 +73,6 @@
 code/main.py 실행. 필요한 라이브러리는 requirements.txt.
 
 ## 배포(선택)
-스트림릿 주소: https://stproject-865sds4g7ywl9m9cgdgawj.streamlit.app/
+스트림릿 주소: 
+https://stproject-a8tz8akaipbesvc6nqjwe9.streamlit.app/ - 데이터 전처리 앱
+https://stproject-865sds4g7ywl9m9cgdgawj.streamlit.app/
