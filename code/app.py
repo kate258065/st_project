@@ -1,11 +1,12 @@
-
 import os
 import pandas as pd
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
+import koreanize_matplotlib
 from scipy.stats import linregress
+
 
 # =================================
 # 1. 기본 설정
